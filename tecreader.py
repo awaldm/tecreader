@@ -6,6 +6,7 @@ import time
 from functools import wraps
 import multiprocessing as mp
 import re as re
+import numbers
 '''
 This module facilitates loading of Tecplot-formatted binary file series, usually from Tau results.
 The approach is as follows:
@@ -44,7 +45,7 @@ def tec_get_dataset(filename, zone_no=None, in_vars=['X', 'Y', 'Z'], dataset_onl
     Obtain a single Tecplot zone and its coordinates.
     Useful in a situation when further processing yields some data.
     """
-    if isinstance(zone_no,(int, long)):
+    if isinstance(zone_no,numbers.Integral):#(int, long)):
         zones = [zone_no]
     else:
         zones = zone_no
@@ -69,7 +70,7 @@ def tec_get_dataset(filename, zone_no=None, in_vars=['X', 'Y', 'Z'], dataset_onl
 
 def save_plt(newvar, dataset, filename, addvars = True, removevars = True):
     varnames = newvar.keys()
-    print varnames
+    #print varnames
     offset = 0
 
     if addvars:
@@ -86,9 +87,6 @@ def save_plt(newvar, dataset, filename, addvars = True, removevars = True):
             zone.values(var)[:] = newvar[var][offset:offset+zone_points].ravel() # this is what the pytecplot example uses
 
         offset = offset + zone_points
-#    if verbosename:
-#        filename = out_folder + case_name+'_'+plane+'_rstresses_'+str(start_i)+'_'+str(end_i)+'.plt'
-#    else:
     tp.data.save_tecplot_plt(filename, dataset=dataset)
     if removevars:
         for keys, _ in newvar.iteritems():
@@ -124,7 +122,7 @@ def tec_get_dataset(filename, zone_no=None, in_vars=['X', 'Y', 'Z']):
     return dataset, data
 """
 
-def read_series(source_path, zone, varnames, szplt=False, gridfile=None, include_geom=True):
+def read_series(source_path, zone, varnames, szplt=False, gridfile=None, include_geom=True, verbose=False):
     if isinstance(source_path, str):
         filelist, num_files= get_sorted_filelist(source_path, 'plt')
     else:
@@ -136,7 +134,7 @@ def read_series(source_path, zone, varnames, szplt=False, gridfile=None, include
     f_r = []
     for i in range(len(filelist)):
        # _,_,_, data_i, dataset = load_tec_file(source_path + filelist[i], szplt=True, verbose=False, varnames=varnames, load_zones=zone, coords=False, deletezones=False, replace=True)
-        _,_,_, data_i, dataset = load_tec_file(filelist[i], szplt=szplt, verbose=True, varnames=varnames, load_zones=zone, coords=False, deletezones=False, replace=True, gridfile=gridfile)
+        _,_,_, data_i, dataset = load_tec_file(filelist[i], szplt=szplt, verbose=verbose, varnames=varnames, load_zones=zone, coords=False, deletezones=False, replace=True, gridfile=gridfile)
 
         f_r.append(data_i)
 
@@ -157,7 +155,7 @@ def parallel_load_wrapper(input_arg):
     #print(data_i.shape)
     return data_i
 
-def read_series_parallel(source_path, zone, varnames, workers, include_geom=True, szplt=False, gridfile=None, verbose=True):
+def read_series_parallel(source_path, zone, varnames, workers, include_geom=True, szplt=False, gridfile=None, verbose=False):
     """ Reads a file list using multiple threads
     Parameters
     ----------
@@ -277,7 +275,9 @@ def get_series(plt_path, zone_no, start_i=None, end_i=None, datasetfile=None, re
     num_files = len(filelist)
 
     # zone number needs to be a list
-    if isinstance(zone_no,(int, long)):
+    #if isinstance(zone_no,(int, long)):
+    if isinstance(zone_no,numbers.Integral):#(int, long)):
+        
         zone_no = [zone_no]
     else:
         zone_no = zone_no
@@ -647,7 +647,6 @@ def read_tec_bin_series(source_path, load_zones=None, szplt=False, varnames=None
             frame2.activate()
             x,y,z,data_i, dataset = load_tec_file(source_path + s, szplt=szplt, varnames=varnames, load_zones=load_zones,coords=True, verbose=verbose, deletezones=False, replace=False)
         else:
-            verbose = False
             _,_,_,data_i, _ = load_tec_file(source_path + s, szplt=szplt, varnames=varnames, load_zones=load_zones, coords=False, verbose=verbose, deletezones=False)
 
         print('shape of data array after file count '+str(count)+': ' + str(data_i.shape))
@@ -760,7 +759,7 @@ def get_coordinates(dataset, caps = True):
 
 
 
-def load_tec_file(filename, szplt=False, varnames=None, load_zones=[0,1], coords=True, verbose=True, deletezones=True, replace=True, include_geom=True, gridfile=None):
+def load_tec_file(filename, szplt=False, varnames=None, load_zones=[0,1], coords=True, verbose=False, deletezones=True, replace=True, include_geom=True, gridfile=None):
     '''
     Read a Tecplot binary file using pytecplot, tested with version 0.9 (included in Tecplot 2017R3)
     and 0.12 (Tecplot 2018R2)
@@ -821,7 +820,8 @@ def load_tec_file(filename, szplt=False, varnames=None, load_zones=[0,1], coords
         if load_zones is not None:
             if not all(isinstance(x, (int)) for x in load_zones):
                 raise ValueError
-            print('loading tec files: ' + str(filename))
+            if verbose:
+                print('loading tec files: ' + str(filename))
             dataset = tp.data.load_tecplot(filename, zones=load_zones, read_data_option=readoption, include_geom = include_geom)
         else:
             dataset = tp.data.load_tecplot(filename, read_data_option=readoption, include_geom = include_geom)
