@@ -74,7 +74,7 @@ def save_plt(newvar, dataset, filename, addvars = True, removevars = True):
     offset = 0
 
     if addvars:
-        for keys, _ in newvar.iteritems():
+        for keys, _ in newvar.items():
             dataset.add_variable(keys)
 
     for zone in dataset.zones():
@@ -89,7 +89,7 @@ def save_plt(newvar, dataset, filename, addvars = True, removevars = True):
         offset = offset + zone_points
     tp.data.save_tecplot_plt(filename, dataset=dataset)
     if removevars:
-        for keys, _ in newvar.iteritems():
+        for keys, _ in newvar.items():
             dataset.delete_variables(dataset.variable(keys))
 
 
