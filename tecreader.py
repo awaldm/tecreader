@@ -255,6 +255,7 @@ def get_series(plt_path, zone_no, start_i=None, end_i=None, datasetfile=None, re
     print('\nreading series...')
     print(80*'-')
 
+    # Set up names of the variables conforming to the TAU solver's convention
     varnames = list()
     if read_velocities:
         vel_list =['x_velocity', 'y_velocity', 'z_velocity']
@@ -266,10 +267,16 @@ def get_series(plt_path, zone_no, start_i=None, end_i=None, datasetfile=None, re
         gradlist = ['dudx', 'dudy', 'dudz', 'dvdx', 'dvdy', 'dvdz', 'dwdx', 'dwdy', 'dwdz']
         for name in gradlist:
             varnames.append(name)
-    if verbose:
-        print(varnames)
-    filelist, num_files = get_sorted_filelist(plt_path, 'plt', stride=stride)
+    if read_pressure_gradients:
+        gradlist = ['dpdx', 'dpdy', 'dpdz']
+        for name in gradlist:
+            varnames.append(name)
+            
+    print('Variable names to be loaded: ' +str(varnames))
 
+
+    # Get a list of files present in the given folder and select parts of it, if necessary
+    filelist, num_files = get_sorted_filelist(plt_path, 'plt', stride=stride)
     filelist = get_cleaned_filelist(filelist,start_i=start_i, end_i=end_i)
 
     num_files = len(filelist)
@@ -286,32 +293,31 @@ def get_series(plt_path, zone_no, start_i=None, end_i=None, datasetfile=None, re
     else:
         in_data = read_series([plt_path + s for s in filelist], zone_no, varnames, include_geom=include_geom, gridfile=gridfile)
 
+
     print('data shape: ' + str(in_data.shape))
-    varnum = -1
     if read_velocities:
-        u = in_data[:,:,varnum+1]
-        v = in_data[:,:,varnum+2]
-        w = in_data[:,:,varnum+3]
-        varnum = varnum + 3
+        out_data['u'] = in_data[:,:,varnames.index('x_velocity')]
+        out_data['v'] = in_data[:,:,varnames.index('y_velocity')]
+        out_data['w']  = in_data[:,:,varnames.index('z_velocity')]
     if read_cp:
-        cp = in_data[:,:,varnum+1]
-        varnum = varnum + 1
+        out_data['cp'] = in_data[:,:,varnames.index('cp')]
+        
     if read_vel_gradients:
-        dudx = in_data[:,:,varnum+1]
-        dudy = in_data[:,:,varnum+2]
-        dudz = in_data[:,:,varnum+3]
-        dvdx = in_data[:,:,varnum+4]
-        dvdy = in_data[:,:,varnum+5]
-        dvdz = in_data[:,:,varnum+6]
-        dwdx = in_data[:,:,varnum+7]
-        dwdy = in_data[:,:,varnum+8]
-        dwdz = in_data[:,:,varnum+9]
-        varnum = varnum + 9
+        out_data['dudx'] = in_data[:,:,varnames.index('dudx')]
+        out_data['dudy'] = in_data[:,:,varnames.index('dudy')]
+        out_data['dudz'] = in_data[:,:,varnames.index('dudz')]
+        out_data['dvdx'] = in_data[:,:,varnames.index('dvdx')]
+        out_data['dvdy'] = in_data[:,:,varnames.index('dvdy')]
+        out_data['dvdz'] = in_data[:,:,varnames.index('dvdz')]
+        out_data['dwdx'] = in_data[:,:,varnames.index('dwdx')]
+        out_data['dwdy'] = in_data[:,:,varnames.index('dwdy')]
+        out_data['dwdz'] = in_data[:,:,varnames.index('dwdz')]
+        
     if read_pressure_gradients:
-        dpdx = in_data[:,:,varnum+1]
-        dpdy = in_data[:,:,varnum+2]
-        dpdz = in_data[:,:,varnum+3]
-        varnum = varnum + 3
+        out_data['dpdx'] = in_data[:,:,varnames.index('dpdx')]
+        out_data['dpdy'] = in_data[:,:,varnames.index('dpdy')]
+        out_data['dpdz'] = in_data[:,:,varnames.index('dpdz')]
+
 
     if gridfile is not None:
         dataset = tec_get_dataset(gridfile, zone_no = zone_no[0:(len(zone_no)/2)], dataset_only=True)
@@ -322,16 +328,7 @@ def get_series(plt_path, zone_no, start_i=None, end_i=None, datasetfile=None, re
         else:
             dataset = tec_get_dataset(datasetfile, dataset_only=True)
 
-    # this is ugly and obviously not extensible or maintainable, need a different
-    # strategy for passing data
-    if read_velocities and not read_cp and not read_vel_gradients and not read_pressure_gradients:
-        return u,v,w, dataset
-    if read_velocities and not read_cp and read_vel_gradients and not read_pressure_gradients:
-        return u,v,w,dudx, dudy, dudz, dvdx, dvdy, dvdz, dwdx, dwdy, dwdz,dataset
-    if not read_velocities and read_cp and not read_vel_gradients and not read_pressure_gradients:
-        return cp, dataset
-    if read_velocities and read_cp and not read_vel_gradients and not read_pressure_gradients:
-        return u,v,w,cp,dataset
+    return out_data, dataset
 
 '''
 
