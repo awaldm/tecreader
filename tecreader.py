@@ -293,12 +293,12 @@ def get_series(plt_path, zone_no, start_i=None, end_i=None, datasetfile=None, re
     else:
         in_data = read_series([plt_path + s for s in filelist], zone_no, varnames, include_geom=include_geom, gridfile=gridfile)
 
-
+    out_data = dict()
     print('data shape: ' + str(in_data.shape))
     if read_velocities:
         out_data['u'] = in_data[:,:,varnames.index('x_velocity')]
         out_data['v'] = in_data[:,:,varnames.index('y_velocity')]
-        out_data['w']  = in_data[:,:,varnames.index('z_velocity')]
+        out_data['w'] = in_data[:,:,varnames.index('z_velocity')]
     if read_cp:
         out_data['cp'] = in_data[:,:,varnames.index('cp')]
         
