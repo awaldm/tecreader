@@ -1,4 +1,4 @@
-# tec_series
+# tecreader
 python reader for binary Tecplot data using pytecplot
 
 ## Introduction
