@@ -1,7 +1,7 @@
 import tecplot as tp
 import numpy as np
 import sys, os, fnmatch
-from memory_profiler import profile
+#from memory_profiler import profile
 import time
 from functools import wraps
 import multiprocessing as mp
@@ -271,7 +271,7 @@ def get_series(plt_path, zone_no, start_i=None, end_i=None, datasetfile=None, re
         gradlist = ['dpdx', 'dpdy', 'dpdz']
         for name in gradlist:
             varnames.append(name)
-            
+
     print('Variable names to be loaded: ' +str(varnames))
 
 
@@ -284,7 +284,7 @@ def get_series(plt_path, zone_no, start_i=None, end_i=None, datasetfile=None, re
     # zone number needs to be a list
     #if isinstance(zone_no,(int, long)):
     if isinstance(zone_no,numbers.Integral):#(int, long)):
-        
+
         zone_no = [zone_no]
     else:
         zone_no = zone_no
@@ -301,7 +301,7 @@ def get_series(plt_path, zone_no, start_i=None, end_i=None, datasetfile=None, re
         out_data['w'] = in_data[:,:,varnames.index('z_velocity')]
     if read_cp:
         out_data['cp'] = in_data[:,:,varnames.index('cp')]
-        
+
     if read_vel_gradients:
         out_data['dudx'] = in_data[:,:,varnames.index('dudx')]
         out_data['dudy'] = in_data[:,:,varnames.index('dudy')]
@@ -312,7 +312,7 @@ def get_series(plt_path, zone_no, start_i=None, end_i=None, datasetfile=None, re
         out_data['dwdx'] = in_data[:,:,varnames.index('dwdx')]
         out_data['dwdy'] = in_data[:,:,varnames.index('dwdy')]
         out_data['dwdz'] = in_data[:,:,varnames.index('dwdz')]
-        
+
     if read_pressure_gradients:
         out_data['dpdx'] = in_data[:,:,varnames.index('dpdx')]
         out_data['dpdy'] = in_data[:,:,varnames.index('dpdy')]
