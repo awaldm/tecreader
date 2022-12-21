@@ -7,6 +7,8 @@ from functools import wraps
 import multiprocessing as mp
 import re as re
 import numbers
+import logging
+logger = logging.getLogger(__name__)
 '''
 This module facilitates loading of Tecplot-formatted binary file series, usually from Tau results.
 The approach is as follows:
@@ -128,7 +130,6 @@ def read_series(source_path, zone, varnames, szplt=False, gridfile=None, include
     else:
         filelist = source_path
         num_files = len(filelist)
-    print(num_files)
     print('reading zones: ' + str(zone))
     start_time = time.time()
     f_r = []
@@ -278,8 +279,9 @@ def get_series(plt_path, zone_no, start_i=None, end_i=None, datasetfile=None, re
     # Get a list of files present in the given folder and select parts of it, if necessary
     filelist, num_files = get_sorted_filelist(plt_path, 'plt', stride=stride)
     filelist = get_cleaned_filelist(filelist,start_i=start_i, end_i=end_i)
-
+    print(filelist)
     num_files = len(filelist)
+    logger.info('num_files in get_series: ' + str(num_files))
 
     # zone number needs to be a list
     #if isinstance(zone_no,(int, long)):
@@ -291,7 +293,7 @@ def get_series(plt_path, zone_no, start_i=None, end_i=None, datasetfile=None, re
     if parallel:
         in_data = read_series_parallel([plt_path + s for s in filelist], zone_no, varnames, 3, include_geom=include_geom, gridfile=gridfile)
     else:
-        in_data = read_series([plt_path + s for s in filelist], zone_no, varnames, include_geom=include_geom, gridfile=gridfile)
+        in_data = read_series([os.path.join(plt_path,s) for s in filelist], zone_no, varnames, include_geom=include_geom, gridfile=gridfile)
 
     out_data = dict()
     print('data shape: ' + str(in_data.shape))
@@ -324,7 +326,7 @@ def get_series(plt_path, zone_no, start_i=None, end_i=None, datasetfile=None, re
         #print('loaded dataset from gridfile, zones ' + str(zone_no[0:(len(zone_no)/2)]))
     else:
         if datasetfile is None:
-            dataset = tec_get_dataset(plt_path + filelist[0], zone_no = zone_no, dataset_only=True)
+            dataset = tec_get_dataset(os.path.join(plt_path, filelist[0]), zone_no = zone_no, dataset_only=True)
         else:
             dataset = tec_get_dataset(datasetfile, dataset_only=True)
 
@@ -367,7 +369,6 @@ def get_sorted_filelist(source_path, extension, sortkey='i', stride=10):
             newlist.append(file)
 
     num_files = len(newlist)
-
     return newlist, num_files
 
 def get_i(s):
@@ -477,6 +478,17 @@ def read_ungathered(source_path, load_zones=None, szplt=False, varnames=None, sh
     print('velocity snapshot shape: ' + str(data.shape) + ', size ' + str(size_MB(data)) + ' MB')
 
 def get_cleaned_filelist(filelist, start_i, end_i):
+    """Select a subseries from the passed file list based on starting and ending
+    indices.
+
+    TODO: This currently silently returns the entire file list if one of the indices
+    is not found. This should not happen.
+
+    :param filelist: _description_
+    :param start_i: _description_
+    :param end_i: _description_
+    :return: _description_
+    """
     startindex = None
     endindex = None
     print('looking for starting i ' + str(start_i) + ' end ending i ' + str(end_i) + ' in a file list of length ' + str(len(filelist)))
@@ -807,7 +819,7 @@ def load_tec_file(filename, szplt=False, varnames=None, load_zones=[0,1], coords
         readoption = tp.constant.ReadDataOption.Replace
     else:
         readoption = tp.constant.ReadDataOption.Append
-
+    print(filename)
     # load the actual data. in case of SZPLT all zones are loaded
     if szplt:
         print('starting szplt loader')
